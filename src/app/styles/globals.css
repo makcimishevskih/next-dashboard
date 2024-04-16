@@ -1,0 +1,33 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+body {
+  background-color: #f6f7fb;
+}
+
+button {
+  @apply py-2 px-4 rounded-md
+}
+
+button[type='button'] {
+  @apply bg-gray-400 text-gray-900 border border-gray-200
+}
+
+button[type='submit'] {
+  @apply bg-blue-500 border-blue-500 text-white
+}
+
+input {
+  @apply w-full block rounded-md
+}
+
+input[type='text'] {
+  @apply rounded-md
+}
+
+
+.sortable-chosen {
+  @apply opacity-90 shadow-blue-100 border-blue-200 bg-blue-50 shadow-md overflow-hidden rounded-md animate-pulse
+}
