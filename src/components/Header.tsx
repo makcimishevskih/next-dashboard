@@ -1,23 +1,31 @@
-import { getSessionlUsername } from '@/lib/getSessionEmail';
+import LoginButton from "@/components/LoginButton";
+import LogoutButton from "@/components/LogoutButton";
+import { authOptions } from "@/lib/authOptions";
+import { getServerSession } from "next-auth";
 
-import Link from 'next/link';
-import LogoutButton from './auth/LogoutButton';
+import Link from "next/link";
 
 export default async function Header () {
-  const userName = await getSessionlUsername();
-
+  const session = await getServerSession(authOptions);
   return (
-    <header className='bg-gray-200 px-8 flex justify-between h-20 items-center'>
-      <Link href="/" className='logo'>
-        Trello
-      </Link>
-
-      {userName &&
-        <div className='flex gap-2 items-center'>
-          <h3>Hello, {userName}</h3>
-          <LogoutButton />
+    <header className="bg-gray-200 p-4 px-8">
+      <div className="flex justify-between items-center">
+        <Link href="/" className="logo">Trello</Link>
+        <div>
+          {session && (
+            <>
+              Hello, {session?.user?.name}
+              <LogoutButton />
+            </>
+          )}
+          {!session && (
+            <>
+              Not logged in
+              <LoginButton />
+            </>
+          )}
         </div>
-      }
+      </div>
     </header>
   );
 }

@@ -1,63 +1,82 @@
 'use client';
+import {updateBoard} from "@/app/actions/boardActions";
+import {RoomProvider, useMyPresence, useUpdateMyPresence} from "@/app/liveblocks.config";
+import {BoardContextProvider} from "@/components/BoardContext";
+import Columns from "@/components/Columns";
+import {faCog} from "@fortawesome/free-solid-svg-icons";
+import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
+import {LiveList} from "@liveblocks/core";
+import {ClientSideSuspense} from "@liveblocks/react";
+import Link from "next/link";
+import {useRouter} from "next/navigation";
+import {FormEvent, useEffect, useState} from "react";
 
-import Column from '@/components/Column';
-import NewColumnForm from '@/components/forms/NewColumnForm';
-import { DragEvent, useState } from 'react';
-import { ReactSortable } from "react-sortablejs";
+export default function Board({id, name}: {id:string, name:string}) {
+  const [renameMode, setRenameMode] = useState(false);
+  const router = useRouter();
+  const updateMyPresence = useUpdateMyPresence();
 
-export type DragT = DragEvent<HTMLDivElement>
+  useEffect(() => {
+    updateMyPresence({boardId: id});
 
-export type ColT = {
-  id: string,
-  name: string
-}
+    return () => {
+      updateMyPresence({boardId:null});
+    }
+  }, []);
 
-export type CardsT = {
-  id: string,
-  name: string,
-  index: number,
-  columnId: string
-}
-
-export const defaultColumns: ColT[] = [
-  { id: 'col1', name: 'Todos' },
-  { id: 'col2', name: 'In Progress' },
-  { id: 'col3', name: 'Done' },
-]
-
-export const defaultCards: CardsT[] = [
-  { id: 'qwe', name: 'task1', index: 0, columnId: 'col1' },
-  { id: 'qweasd', name: 'task2', index: 1, columnId: 'col1' },
-  { id: 'qweasda', name: 'task3', index: 2, columnId: 'col1' },
-  { id: 'asd', name: 'task4', index: 0, columnId: 'col2' },
-  { id: 'asdaa', name: 'task5', index: 1, columnId: 'col2' },
-  { id: 'zxc', name: 'task6', index: 0, columnId: 'col3' }
-]
-
-
-const Board = () => {
-  const [cols, setCols] = useState(defaultColumns);
-  const [cards, setCards] = useState(defaultCards);
+  async function handleNameSubmit(ev:FormEvent) {
+    ev.preventDefault();
+    const input = (ev.target as HTMLFormElement).querySelector('input');
+    if (input) {
+      const newName = input.value;
+      await updateBoard(id, {metadata: {boardName: newName}});
+      input.value = '';
+      setRenameMode(false);
+      router.refresh();
+    }
+  }
 
   return (
-    <div className='flex gap-4 flex-wrap'>
-      <ReactSortable className='flex gap-4 flex-wrap min-h-52' list={cols} setList={setCols}
-      animation={150}
-      ghostClass='opacity-20'
-      >
-        {cols.map((col) =>
-          <Column
-            key={col.name}
-            cards={cards.filter(card => card.columnId === col.id).sort((a, b) => a.index - b.index)}
-            setCards={setCards}
-            {...col}
-          />)
-        }
-      </ReactSortable>
-
-      <NewColumnForm />
-    </div>
+    <BoardContextProvider>
+      <RoomProvider
+        id={id}
+        initialPresence={{
+          cardId:null,
+          boardId:null,
+        }}
+        initialStorage={{
+          columns: new LiveList(),
+          cards: new LiveList(),
+        }}>
+        <ClientSideSuspense fallback={(<div>loading...</div>)}>{() => (
+          <>
+            <div className="flex gap-2 justify-between items-center mb-4">
+              <div>
+                {!renameMode && (
+                  <h1
+                    className="text-2xl"
+                    onClick={() => setRenameMode(true)}>
+                    Board: {name}
+                  </h1>
+                )}
+                {renameMode && (
+                  <form onSubmit={handleNameSubmit}>
+                    <input type="text" defaultValue={name}/>
+                  </form>
+                )}
+              </div>
+              <Link
+                className="flex gap-2 items-center btn"
+                href={`/boards/${id}/settings`}>
+              <FontAwesomeIcon icon={faCog} />
+                Board settings
+              </Link>
+            </div>
+            <Columns/>
+          </>
+        )}
+        </ClientSideSuspense>
+      </RoomProvider>
+    </BoardContextProvider>
   );
-};
-
-export default Board;
+}

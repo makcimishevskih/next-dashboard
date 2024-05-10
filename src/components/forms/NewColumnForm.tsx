@@ -1,64 +1,36 @@
 'use client';
-import { FormEvent, useState } from 'react';
-import { z } from 'zod'
 
-const newColumnSchema = z.object({
-  newColumnName: z.string().trim().min(1, {
-    message: 'New column name must be at least 1 character long'
-  }).max(20, {
-    message: 'New column name must be at most 20 character long'
-  })
-}).required();
+import {useMutation} from "@/app/liveblocks.config";
+import {LiveObject} from "@liveblocks/core";
+import {FormEvent} from "react";
+import uniqid from "uniqid";
 
-const NewColumnForm = () => {
+export default function NewColumnForm() {
 
-  // const [isLoading, setIsLoading] = useState<boolean>(false)
-  const [error, setError] = useState<string | null>(null)
+  const addColumn = useMutation(({storage}, columnName) => {
+    return storage.get('columns').push(new LiveObject({
+      name: columnName,
+      id: uniqid.time(),
+      index: 9999,
+    }));
+  }, []);
 
-  const handleNewColumn = async (
-    // e: FormEvent<HTMLFormElement>
-    formData: FormData
-  ) => {
-    setError('');
-
-    const newColumn = newColumnSchema.safeParse({
-      newColumnName: formData.get('newColumnName')
-    });
-
-    if (!newColumn.success) {
-      let error = '';
-      newColumn.error.issues.forEach(el => {
-        error += el.message + ''
-      })
-
-      setError(error.trim());
-      return;
+  function handleNewColumn(ev: FormEvent) {
+    ev.preventDefault();
+    const input = (ev.target as HTMLFormElement).querySelector('input');
+    if (input) {
+      const columnName = input?.value;
+      addColumn(columnName);
+      input.value = '';
     }
-
-    console.log('all is ok', newColumn.data);
-    // e.preventDefault();
-    // const formData = schema.parse(new FormData(e.currentTarget));
-
-    // const response = await fetch('someapi', {
-    //   method: 'POST',
-    //   body: formData
-    // });
-
   }
-
   return (
-    <form
-      action={handleNewColumn}
-      //  onSubmit={handleNewColumn} 
-      className='max-w-xs'>
-      <label htmlFor="newColumn" className='block mb-2'>
-        <span className='text-gray-600 block'>
-          Column name:
-        </span>
-        <input className='' id='newColumn' type="text" name='newColumnName' placeholder='Type new column name...' />
+    <form onSubmit={handleNewColumn} className="max-w-xs">
+      <label className="block">
+        <span className="text-gray-600 block">Column name:</span>
+        <input type="text" placeholder="new column name"/>
       </label>
-      <button className='mt-2' type='submit'>Create column</button>
+      <button type="submit" className="mt-2 block w-full">Create column</button>
     </form>
   );
-};
-export default NewColumnForm;
+}

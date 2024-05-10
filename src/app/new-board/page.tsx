@@ -1,28 +1,22 @@
 'use client';
+import {createBoard} from "@/app/actions/boardActions";
+import {redirect} from "next/navigation";
 
-import { redirect } from 'next/navigation';
-import createBoard from './api/createBoard';
-
-const NewBoardPage = () => {
-  const handleNewBoardSubmit = async (formData: FormData) => {
-    const boardName = formData.get('board-name')?.toString() || "";
-
-      const room = await createBoard({ boardName });
-    //   if (room) {
-    //     const id = room?.id 
-    //     redirect(`/boards/${id}`)
-    //   }
+export default function NewBoardPage() {
+  async function handleNewBoardSubmit(formData: FormData) {
+    const boardName = formData.get('name')?.toString() || '';
+    const roomInfo = await createBoard(boardName);
+    if (roomInfo) {
+      redirect(`/boards/${roomInfo.id}`);
+    }
   }
-
   return (
-    <div className='w-[40%] m-auto'>
-      <h1 className='text-2xl text-center mb-4'>Create new board</h1>
-      <form action={handleNewBoardSubmit}>
-        <input className='mb-4' placeholder='Board name...' name='board-name' />
-        <button type='submit' className='btn w-full'>Create board</button>
+    <div>
+      <form action={handleNewBoardSubmit} className="max-w-xs block">
+        <h1 className="text-2xl mb-4">Create new board</h1>
+        <input type="text" name="name" placeholder="board name"/>
+        <button type="submit" className="mt-2 w-full">Create board</button>
       </form>
     </div>
   );
-};
-
-export default NewBoardPage;
+}
